@@ -838,7 +838,7 @@ class AttributeContainer extends StatelessWidget {
                                                     ),
                                                   ),
                                                   SizedBox(
-                                                    height: 400,
+                                                    height: 300,
                                                     child: SingleChildScrollView(
                                                       child: Column(
                                                         children: <Widget>[
