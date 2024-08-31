@@ -36,79 +36,81 @@ class SystemContainer extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: myType.systemData.length,
-                  itemBuilder: (context, index) {
-                    return myType.currenState == CurrenState.systemEdit && myType.systemEditIndex == index
-                        ? Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: TextField(
-                              controller: myType.systemController,
-                              decoration: InputDecoration(
-                                hintText: 'Enter system',
-                                suffix: IconButton(
-                                  icon: const Icon(Icons.add),
-                                  onPressed: () {
-                                    myType.systemData[myType.systemEditIndex] =
-                                        myType.systemData[myType.systemEditIndex].copyWith(
-                                      systemName: myType.systemController.text,
-                                    );
-                                    myType.systemController.clear();
-                                    myType.setState(CurrenState.idle);
-                                    myType.setSystemEditIndex(-1);
-                                  },
-                                ),
-                              ),
-                            ),
-                          )
-                        : myType.systemData[index].libraryId == myType.selectedLibraryId ||
-                                myType.selectedLibraryId == -1
-                            ? Container(
-                                color: myType.systemData[index].id == myType.selectedSystemId
-                                    ? Colors.green.shade300
-                                    : Colors.transparent,
-                                child: ListTile(
-                                  title: Text(myType.systemData[index].systemName),
-                                  onTap: () {
-                                    myType.setLibraryId(myType.systemData[index].libraryId);
-                                    myType.setSystemId(myType.systemData[index].id);
-                                    myType.setEntityId(-1);
-                                    myType.setSuperEntityId(-1);
-                                  },
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min, // this line is extr
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.edit,
-                                          color: Colors.green,
-                                        ),
+                child: myType.selectedLibraryId == -1
+                    ? const SizedBox()
+                    : ListView.builder(
+                        itemCount: myType.systemData.length,
+                        itemBuilder: (context, index) {
+                          return myType.currenState == CurrenState.systemEdit && myType.systemEditIndex == index
+                              ? Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: TextField(
+                                    controller: myType.systemController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter system',
+                                      suffix: IconButton(
+                                        icon: const Icon(Icons.add),
                                         onPressed: () {
-                                          myType.systemController.text = myType.systemData[index].systemName;
-                                          myType.setState(CurrenState.systemEdit);
-                                          myType.setSystemEditIndex(index);
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.close,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () {
-                                          if (myType.systemData[index].id == myType.selectedSystemId) {
-                                            myType.setSystemId(-1);
-                                          }
-                                          myType.systemData.removeAt(index);
+                                          myType.systemData[myType.systemEditIndex] =
+                                              myType.systemData[myType.systemEditIndex].copyWith(
+                                            systemName: myType.systemController.text,
+                                          );
+                                          myType.systemController.clear();
                                           myType.setState(CurrenState.idle);
+                                          myType.setSystemEditIndex(-1);
                                         },
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              )
-                            : const SizedBox();
-                  },
-                ),
+                                )
+                              : myType.systemData[index].libraryId == myType.selectedLibraryId ||
+                                      myType.selectedLibraryId == -1
+                                  ? Container(
+                                      color: myType.systemData[index].id == myType.selectedSystemId
+                                          ? Colors.green.shade300
+                                          : Colors.transparent,
+                                      child: ListTile(
+                                        title: Text(myType.systemData[index].systemName),
+                                        onTap: () {
+                                          myType.setLibraryId(myType.systemData[index].libraryId);
+                                          myType.setSystemId(myType.systemData[index].id);
+                                          myType.setEntityId(-1);
+                                          myType.setSuperEntityId(-1);
+                                        },
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min, // this line is extr
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                color: Colors.green,
+                                              ),
+                                              onPressed: () {
+                                                myType.systemController.text = myType.systemData[index].systemName;
+                                                myType.setState(CurrenState.systemEdit);
+                                                myType.setSystemEditIndex(index);
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.close,
+                                                color: Colors.red,
+                                              ),
+                                              onPressed: () {
+                                                if (myType.systemData[index].id == myType.selectedSystemId) {
+                                                  myType.setSystemId(-1);
+                                                }
+                                                myType.systemData.removeAt(index);
+                                                myType.setState(CurrenState.idle);
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox();
+                        },
+                      ),
               ),
               if (myType.currenState == CurrenState.systemAdd)
                 Padding(

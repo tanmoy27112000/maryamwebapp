@@ -36,98 +36,84 @@ class EntityContainer extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: myType.entityData.length,
-                  itemBuilder: (context, index) {
-                    return myType.currenState == CurrenState.entityEdit &&
-                            myType.entityEditIndex == index
-                        ? Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: TextField(
-                              controller: myType.entityController,
-                              decoration: InputDecoration(
-                                hintText: 'Enter entity name',
-                                suffix: IconButton(
-                                  icon: const Icon(Icons.add),
-                                  onPressed: () {
-                                    myType.entityData[myType.entityEditIndex] =
-                                        myType
-                                            .entityData[myType.entityEditIndex]
-                                            .copyWith(
-                                      entityName: myType.entityController.text,
-                                      attributeData: myType
-                                          .entityData[myType.entityEditIndex]
-                                          .attributeData,
-                                    );
-                                    myType.entityController.clear();
-                                    myType.setState(CurrenState.idle);
-                                    myType.setEntityEditIndex(-1);
-                                  },
-                                ),
-                              ),
-                            ),
-                          )
-                        : (myType.entityData[index].libraryId ==
-                                        myType.selectedLibraryId ||
-                                    myType.selectedLibraryId == -1) &&
-                                (myType.entityData[index].systemId ==
-                                        myType.selectedSystemId ||
-                                    myType.selectedSystemId == -1)
-                            ? Container(
-                                color: myType.entityData[index].id ==
-                                        myType.selectedEntityId
-                                    ? Colors.green.shade300
-                                    : Colors.transparent,
-                                child: ListTile(
-                                  title:
-                                      Text(myType.entityData[index].entityName),
-                                  onTap: () {
-                                    myType.setLibraryId(
-                                        myType.entityData[index].libraryId);
-                                    myType.setSystemId(
-                                        myType.entityData[index].systemId);
-                                    myType.setEntityId(
-                                        myType.entityData[index].id);
-                                    myType.setSuperEntityData(index);
-                                  },
-                                  trailing: Row(
-                                    mainAxisSize:
-                                        MainAxisSize.min, // this line is extr
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.edit,
-                                          color: Colors.green,
-                                        ),
+                child: myType.selectedSystemId == -1
+                    ? const SizedBox()
+                    : ListView.builder(
+                        itemCount: myType.entityData.length,
+                        itemBuilder: (context, index) {
+                          return myType.currenState == CurrenState.entityEdit && myType.entityEditIndex == index
+                              ? Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: TextField(
+                                    controller: myType.entityController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter entity name',
+                                      suffix: IconButton(
+                                        icon: const Icon(Icons.add),
                                         onPressed: () {
-                                          myType.entityController.text = myType
-                                              .entityData[index].entityName;
-                                          myType
-                                              .setState(CurrenState.entityEdit);
-                                          myType.setEntityEditIndex(index);
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.close,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () {
-                                          if (myType.entityData[index].id ==
-                                              myType.selectedEntityId) {
-                                            myType.setEntityId(-1);
-                                          }
-                                          myType.entityData.removeAt(index);
+                                          myType.entityData[myType.entityEditIndex] =
+                                              myType.entityData[myType.entityEditIndex].copyWith(
+                                            entityName: myType.entityController.text,
+                                            attributeData: myType.entityData[myType.entityEditIndex].attributeData,
+                                          );
+                                          myType.entityController.clear();
                                           myType.setState(CurrenState.idle);
+                                          myType.setEntityEditIndex(-1);
                                         },
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              )
-                            : const SizedBox();
-                  },
-                ),
+                                )
+                              : (myType.entityData[index].libraryId == myType.selectedLibraryId ||
+                                          myType.selectedLibraryId == -1) &&
+                                      (myType.entityData[index].systemId == myType.selectedSystemId ||
+                                          myType.selectedSystemId == -1)
+                                  ? Container(
+                                      color: myType.entityData[index].id == myType.selectedEntityId
+                                          ? Colors.green.shade300
+                                          : Colors.transparent,
+                                      child: ListTile(
+                                        title: Text(myType.entityData[index].entityName),
+                                        onTap: () {
+                                          myType.setLibraryId(myType.entityData[index].libraryId);
+                                          myType.setSystemId(myType.entityData[index].systemId);
+                                          myType.setEntityId(myType.entityData[index].id);
+                                          myType.setSuperEntityData(index);
+                                        },
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min, // this line is extr
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                color: Colors.green,
+                                              ),
+                                              onPressed: () {
+                                                myType.entityController.text = myType.entityData[index].entityName;
+                                                myType.setState(CurrenState.entityEdit);
+                                                myType.setEntityEditIndex(index);
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.close,
+                                                color: Colors.red,
+                                              ),
+                                              onPressed: () {
+                                                if (myType.entityData[index].id == myType.selectedEntityId) {
+                                                  myType.setEntityId(-1);
+                                                }
+                                                myType.entityData.removeAt(index);
+                                                myType.setState(CurrenState.idle);
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox();
+                        },
+                      ),
               ),
               if (myType.currenState == CurrenState.entityAdd)
                 Padding(
