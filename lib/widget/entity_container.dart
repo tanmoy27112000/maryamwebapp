@@ -36,7 +36,7 @@ class EntityContainer extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: myType.selectedSystemId == -1
+                child: myType.selectedLibraryId == -1
                     ? const SizedBox()
                     : ListView.builder(
                         itemCount: myType.entityData.length,

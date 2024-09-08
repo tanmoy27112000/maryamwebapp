@@ -34,7 +34,7 @@ class SuperEntityContainer extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: myType.selectedEntityId == -1
+                child: myType.selectedLibraryId != -1 && myType.selectedEntityId == -1 
                     ? const SizedBox()
                     : ListView.builder(
                         itemCount: myType.entityData[entityIndex].superEntityData.length,

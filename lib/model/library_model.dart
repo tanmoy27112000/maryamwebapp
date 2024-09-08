@@ -128,6 +128,7 @@ class SuperEntityModel {
 
 class Attribute {
   String name;
+  int? libraryId;
   AttributeType attributeType;
   dynamic value;
 
@@ -135,6 +136,7 @@ class Attribute {
     required this.attributeType,
     this.name = "",
     this.value,
+    this.libraryId,
   });
 
   //override toString method for attributeType
