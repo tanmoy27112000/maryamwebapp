@@ -92,6 +92,27 @@ class _HomepageState extends State<Homepage> {
                             )),
                       ],
                     ),
+                  if (myType.selectedEntityId != -1)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Entity selected",
+                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold
+                              //fontSize: 20.0,
+                              ),
+                        ),
+                        IconButton(
+                            onPressed: () {
+                              myType.setEntityId(-1);
+                              myType.setSuperEntityId(-1);
+                            },
+                            icon: const Icon(
+                              Icons.close,
+                              color: Colors.red,
+                            )),
+                      ],
+                    ),
 
                   if (myType.selectedSuperEntityId != -1)
                     Row(
@@ -158,7 +179,6 @@ class _HomepageState extends State<Homepage> {
               Column(
                 children: <Widget>[
                   EntityContainer(),
-                  //SuperEntityContainer(),
                 ],
               ),
               AttributeContainer(),

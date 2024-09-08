@@ -57,18 +57,12 @@ class EntityModel {
   int libraryId;
   int systemId;
   String entityName;
-  List<SuperEntityModel> superEntityData = [];
-  List<String> subentityData;
-  List<Attribute> attributeData;
 
   EntityModel({
     required this.id,
     required this.libraryId,
     required this.systemId,
     required this.entityName,
-    this.superEntityData = const [],
-    this.subentityData = const [],
-    this.attributeData = const [],
   });
 
   //copy with
@@ -77,18 +71,12 @@ class EntityModel {
     int? libraryId,
     int? systemId,
     String? entityName,
-    List<SuperEntityModel>? superEntityData,
-    List<String>? subentityData,
-    required List<Attribute> attributeData,
   }) {
     return EntityModel(
       id: id ?? this.id,
       libraryId: libraryId ?? this.libraryId,
       systemId: systemId ?? this.systemId,
       entityName: entityName ?? this.entityName,
-      superEntityData: superEntityData ?? this.superEntityData,
-      subentityData: subentityData ?? this.subentityData,
-      attributeData: attributeData,
     );
   }
 }
@@ -97,15 +85,15 @@ class SuperEntityModel {
   int id;
   int libraryId;
   int systemId;
+  int entityId;
   String entityName;
-  List<Attribute> attributeData;
 
   SuperEntityModel({
     required this.id,
     required this.libraryId,
     required this.systemId,
+    required this.entityId,
     required this.entityName,
-    this.attributeData = const [],
   });
 
   //copy with
@@ -114,29 +102,33 @@ class SuperEntityModel {
     int? libraryId,
     int? systemId,
     String? entityName,
-    required List<Attribute> attributeData,
+    int? entityId,
   }) {
     return SuperEntityModel(
       id: id ?? this.id,
       libraryId: libraryId ?? this.libraryId,
       systemId: systemId ?? this.systemId,
+      entityId: entityId ?? this.entityId,
       entityName: entityName ?? this.entityName,
-      attributeData: attributeData,
     );
   }
 }
 
-class Attribute {
+class AttributeModel {
   String name;
   int? libraryId;
+  int systemId;
+  int entityId;
   AttributeType attributeType;
   dynamic value;
 
-  Attribute({
+  AttributeModel({
     required this.attributeType,
     this.name = "",
     this.value,
-    this.libraryId,
+    required this.libraryId,
+    required this.systemId,
+    required this.entityId,
   });
 
   //override toString method for attributeType

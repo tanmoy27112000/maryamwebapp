@@ -54,7 +54,6 @@ class EntityContainer extends StatelessWidget {
                                           myType.entityData[myType.entityEditIndex] =
                                               myType.entityData[myType.entityEditIndex].copyWith(
                                             entityName: myType.entityController.text,
-                                            attributeData: myType.entityData[myType.entityEditIndex].attributeData,
                                           );
                                           myType.entityController.clear();
                                           myType.setState(CurrenState.idle);

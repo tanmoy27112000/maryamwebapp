@@ -5,6 +5,8 @@ class DataProvider extends ChangeNotifier {
   List<LibraryModel> libraryData = [];
   List<SystemModel> systemData = [];
   List<EntityModel> entityData = [];
+  List<SuperEntityModel> superEntityData = [];
+  List<AttributeModel> attributeData = [];
 
   TextEditingController libraryController = TextEditingController();
   TextEditingController libraryCommentController = TextEditingController();
@@ -27,6 +29,7 @@ class DataProvider extends ChangeNotifier {
   int selectedSystemId = -1;
   int selectedEntityId = -1;
   int selectedSuperEntityId = -1;
+  int selectedAttributeId = -1;
 
   //set Library id
   void setLibraryId(int id) {
@@ -111,43 +114,45 @@ class DataProvider extends ChangeNotifier {
   }
 
   List<SuperEntityModel> getEntityList(int index) {
-    if (entityData[index].superEntityData.isEmpty) {
-      List<SuperEntityModel> superEntityData = entityData
+    if (superEntityData.isEmpty) {
+      List<SuperEntityModel> tempSuperEntityData = entityData
           .map(
             (e) => SuperEntityModel(
               id: e.id,
               libraryId: e.libraryId,
               systemId: e.systemId,
+              entityId: e.id,
               entityName: e.entityName,
             ),
           )
           .toList();
-      superEntityData.removeAt(index);
-      return superEntityData;
+      tempSuperEntityData.removeAt(index);
+      return tempSuperEntityData;
     } else {
-      List<SuperEntityModel> superEntityData = entityData
+      List<SuperEntityModel> tempSuperEntityData = entityData
           .map(
             (e) => SuperEntityModel(
               id: e.id,
               libraryId: e.libraryId,
               systemId: e.systemId,
+              entityId: e.id,
               entityName: e.entityName,
             ),
           )
           .toList();
-      superEntityData.removeAt(index);
+      tempSuperEntityData.removeAt(index);
       //remove the id that is already in the superEntityData
-      for (var element in entityData[index].superEntityData) {
-        superEntityData.removeWhere((e) => e.id == element.id);
+      for (var element in superEntityData) {
+        tempSuperEntityData.removeWhere((e) => e.id == element.id);
       }
-      return superEntityData;
+      return tempSuperEntityData;
     }
   }
 
   void addSuperEntity(SuperEntityModel superEntityModel, int entityIndex) {
-    List superEntityData = List.from(entityData[entityIndex].superEntityData);
-    superEntityData.add(superEntityModel);
-    entityData[entityIndex].superEntityData = List.from(superEntityData);
+    List tempSuperEntityData = List.from(superEntityData);
+    tempSuperEntityData.add(superEntityModel);
+    superEntityData = List.from(tempSuperEntityData);
     notifyListeners();
   }
 }
