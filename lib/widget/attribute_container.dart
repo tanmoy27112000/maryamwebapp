@@ -1,19 +1,21 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp/model/library_model.dart';
 import 'package:webapp/provider/data_provider.dart';
 
-class AttributeContainer extends StatelessWidget {
-  const AttributeContainer({
-    super.key,
-  });
+class AttributeContainerV2 extends StatelessWidget {
+  const AttributeContainerV2({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<DataProvider>(
-      builder: (context, myType, child) {
-        int entityIndex = myType.entityData.indexWhere((element) => element.id == myType.selectedEntityId);
-
+      builder: (context, dataProvider, child) {
+        int entityIndex = dataProvider.entityData.indexWhere(
+          (element) => element.id == dataProvider.selectedEntityId,
+        );
+        bool isSuperEntitySelected = dataProvider.selectedSuperEntityId != -1;
         return Container(
           margin: const EdgeInsets.all(10),
           width: 300,
@@ -37,31 +39,30 @@ class AttributeContainer extends StatelessWidget {
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: myType.superEntityData.length,
+                itemCount: dataProvider.superEntityData.length,
                 itemBuilder: (context, index) {
-                  return myType.currenState == CurrenState.superEntityEdit && myType.superEntityEditIndex == index
+                  return dataProvider.currenState == CurrenState.superEntityEdit &&
+                          dataProvider.superEntityEditIndex == index
                       ? const Padding(
                           padding: EdgeInsets.all(10),
                         )
-                      : shouldShowSuperEntity(index, myType)
+                      : shouldShowSuperEntity(index, dataProvider)
                           ? ListTile(
-                              title: Text(myType.superEntityData[index].entityName),
+                              title: Text(dataProvider.superEntityData[index].entityName),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
                                     onPressed: () {
-                                      //show dialog to edit super entity
-                                      TextEditingController superEntityController = TextEditingController();
-                                      superEntityController.text = myType.superEntityData[index].entityName;
+                                      // Show dialog to edit super entity
                                       showDialog(
                                         context: context,
                                         builder: (context) => AlertDialog(
                                             title: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                const Text("Edit Super Entity"),
-                                                //close button
+                                                const Text("Change Super Entity"),
+                                                // Close button
                                                 IconButton(
                                                   onPressed: () {
                                                     Navigator.pop(context);
@@ -73,27 +74,36 @@ class AttributeContainer extends StatelessWidget {
                                                 ),
                                               ],
                                             ),
-                                            content: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: <Widget>[
-                                                TextField(
-                                                  controller: superEntityController,
-                                                  decoration: const InputDecoration(
-                                                    labelText: "Enter super entity name",
+                                            content: SingleChildScrollView(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: <Widget>[
+                                                  ...dataProvider.getEntityList(entityIndex).map(
+                                                    (e) {
+                                                      return ListTile(
+                                                        title: Text(e.entityName),
+                                                        onTap: () {
+                                                          // Replace the existing super entity
+                                                          int index = dataProvider.superEntityData.indexWhere(
+                                                              (element) =>
+                                                                  element.id == dataProvider.selectedSuperEntityId);
+                                                          dataProvider.updateSuperEntity(
+                                                            SuperEntityModel(
+                                                              entityId: dataProvider.selectedEntityId,
+                                                              libraryId: e.libraryId,
+                                                              systemId: e.systemId,
+                                                              entityName: e.entityName,
+                                                              id: dataProvider.selectedSuperEntityId,
+                                                            ),
+                                                            index,
+                                                          );
+                                                          Navigator.pop(context);
+                                                        },
+                                                      );
+                                                    },
                                                   ),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () {
-                                                    myType.superEntityData[index] =
-                                                        myType.superEntityData[index].copyWith(
-                                                      entityName: superEntityController.text,
-                                                    );
-                                                    myType.setState(CurrenState.idle);
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: const Text("Edit"),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             )),
                                       );
                                     },
@@ -104,10 +114,12 @@ class AttributeContainer extends StatelessWidget {
                                   ),
                                   IconButton(
                                     onPressed: () {
-                                      List<SuperEntityModel> tempList = List.from(myType.superEntityData);
-                                      tempList.removeAt(index);
-                                      myType.superEntityData = tempList;
-                                      myType.setState(CurrenState.idle);
+                                      dataProvider.superEntityData.removeWhere(
+                                        (element) => element.id == dataProvider.selectedSuperEntityId,
+                                      );
+                                      dataProvider.setSuperEntityId(-1);
+                                      // Update the state after deletion
+                                      dataProvider.setState(CurrenState.idle);
                                     },
                                     icon: const Icon(
                                       Icons.close,
@@ -117,13 +129,13 @@ class AttributeContainer extends StatelessWidget {
                                 ],
                               ),
                             )
-                          : Container();
+                          : const SizedBox();
                 },
               ),
-              if (myType.selectedEntityId != -1)
+              if (dataProvider.selectedEntityId != -1 && !isSuperEntitySelected)
                 TextButton(
                   onPressed: () {
-                    //show dialog to add super entity
+                    // Show dialog to add super entity
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -131,7 +143,7 @@ class AttributeContainer extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Text("Add Super Entity"),
-                              //close button
+                              // Close button
                               IconButton(
                                 onPressed: () {
                                   Navigator.pop(context);
@@ -147,21 +159,20 @@ class AttributeContainer extends StatelessWidget {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
-                                ...myType.getEntityList(entityIndex).map(
+                                ...dataProvider.getEntityList(entityIndex).map(
                                   (e) {
                                     return ListTile(
                                       title: Text(e.entityName),
                                       onTap: () {
-                                        myType.addSuperEntity(
-                                          SuperEntityModel(
-                                            id: e.id,
-                                            libraryId: myType.selectedLibraryId,
-                                            systemId: myType.selectedSystemId,
-                                            entityId: myType.selectedEntityId,
-                                            entityName: e.entityName,
-                                          ),
-                                          entityIndex,
+                                        final data = SuperEntityModel(
+                                          entityId: dataProvider.selectedEntityId,
+                                          libraryId: e.libraryId,
+                                          systemId: e.systemId,
+                                          entityName: e.entityName,
+                                          id: Random().nextInt(1000),
                                         );
+                                        dataProvider.superEntityData.add(data);
+                                        dataProvider.setSuperEntityId(data.id);
                                         Navigator.pop(context);
                                       },
                                     );
@@ -177,6 +188,9 @@ class AttributeContainer extends StatelessWidget {
                     style: TextStyle(fontSize: 20, color: Colors.black),
                   ),
                 ),
+              const SizedBox(height: 20),
+              // Show 'Attributes' title if the selected entity exists
+
               const Text(
                 "Attributes",
                 style: TextStyle(
@@ -184,29 +198,54 @@ class AttributeContainer extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              // Display the list of attributes for the selected entity
+
               ListView.builder(
-                itemCount: myType.attributeData.length,
+                itemCount: dataProvider.attributeData.length,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemBuilder: (BuildContext context, int index) {
-                  return shouldShowSuperEntity(index, myType)
+                  var attribute = dataProvider.attributeData[index];
+                  return shouldShowAttribute(index, dataProvider)
                       ? ListTile(
                           leading: Text("${index + 1}"),
-                          title: Text(myType.attributeData[index].toString()),
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Label and Value for 'Name'
+                              Text(
+                                "Name: ${attribute.name}",
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              // Label and Value for 'Type'
+                              Text(
+                                "Type: ${attribute.attributeType.name}",
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              // Label and Value for 'Value'
+                              Text(
+                                "Value: ${attribute.value}",
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              editButton(myType, index, context),
+                              // Edit Button for each attribute
                               IconButton(
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: Colors.red,
-                                ),
+                                icon: const Icon(Icons.edit, color: Colors.green),
                                 onPressed: () {
-                                  List<AttributeModel> tempList = List.from(myType.attributeData);
-                                  tempList.removeAt(index);
-                                  myType.attributeData = tempList;
-                                  myType.setState(CurrenState.idle);
+                                  _handleEditAttribute(context, dataProvider, entityIndex, index);
+                                },
+                              ),
+                              // Delete Button for each attribute
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.red),
+                                onPressed: () {
+                                  _handleDeleteAttribute(dataProvider, entityIndex, index);
                                 },
                               ),
                             ],
@@ -215,430 +254,13 @@ class AttributeContainer extends StatelessWidget {
                       : const SizedBox();
                 },
               ),
-              if (myType.selectedEntityId != -1)
+              // Show the 'Add' button if any entity is selected
+              if (dataProvider.selectedEntityId != -1)
                 Padding(
                   padding: const EdgeInsets.all(10),
                   child: TextButton(
                     onPressed: () {
-                      myType.setState(CurrenState.attributeAdd);
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text("Select attribute type"),
-                                IconButton(
-                                  onPressed: () {
-                                    myType.setState(CurrenState.idle);
-                                    Navigator.pop(context);
-                                  },
-                                  icon: const Icon(
-                                    Icons.close,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ListTile(
-                                  title: const Text("String"),
-                                  onTap: () {
-                                    //show dialog to add a string
-                                    TextEditingController attributeController = TextEditingController();
-                                    TextEditingController nameController = TextEditingController();
-
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: const Text("Add String"),
-                                          content: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              TextField(
-                                                controller: nameController,
-                                                decoration: const InputDecoration(
-                                                  labelText: "Enter attribute name",
-                                                ),
-                                              ),
-                                              TextField(
-                                                controller: attributeController,
-                                                decoration: const InputDecoration(
-                                                  labelText: "Enter attribute value",
-                                                ),
-                                              ),
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                children: [
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      List<AttributeModel> tempList = List.from(myType.attributeData);
-                                                      tempList.add(AttributeModel(
-                                                        attributeType: AttributeType.string,
-                                                        entityId: myType.selectedEntityId,
-                                                        libraryId: myType.selectedLibraryId,
-                                                        systemId: myType.selectedSystemId,
-                                                        value: attributeController.text,
-                                                        name: nameController.text,
-                                                      ));
-                                                      myType.attributeData = tempList;
-                                                      myType.setState(CurrenState.idle);
-                                                      Navigator.pop(context);
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: const Text("Add"),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: const Text("Cancel"),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                                ListTile(
-                                  title: const Text("Int"),
-                                  onTap: () {
-                                    //show dialog to add a int
-                                    TextEditingController attributeController = TextEditingController();
-                                    TextEditingController nameController = TextEditingController();
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: const Text("Add Int"),
-                                          content: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              TextField(
-                                                controller: nameController,
-                                                decoration: const InputDecoration(
-                                                  labelText: "Enter attribute name",
-                                                ),
-                                              ),
-                                              TextField(
-                                                controller: attributeController,
-                                                decoration: const InputDecoration(
-                                                  labelText: "Enter attribute value",
-                                                ),
-                                              ),
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                children: [
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      List<AttributeModel> tempList = List.from(myType.attributeData);
-                                                      tempList.add(AttributeModel(
-                                                        attributeType: AttributeType.int,
-                                                        value: int.parse(attributeController.text),
-                                                        name: nameController.text,
-                                                        entityId: myType.selectedEntityId,
-                                                        libraryId: myType.selectedLibraryId,
-                                                        systemId: myType.selectedSystemId,
-                                                      ));
-                                                      myType.attributeData = tempList;
-                                                      myType.setState(CurrenState.idle);
-                                                      Navigator.pop(context);
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: const Text("Add"),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: const Text("Cancel"),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                                ListTile(
-                                  title: const Text("Range"),
-                                  onTap: () {
-                                    //show dialog to add a bool
-                                    TextEditingController nameController = TextEditingController();
-                                    TextEditingController trueController = TextEditingController();
-                                    TextEditingController falseController = TextEditingController();
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: const Text("Add range"),
-                                          content: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SizedBox(
-                                                width: 400,
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                  children: [
-                                                    TextField(
-                                                      controller: nameController,
-                                                      decoration: const InputDecoration(
-                                                        labelText: "Enter attribute name",
-                                                      ),
-                                                    ),
-                                                    TextField(
-                                                      controller: trueController,
-                                                      decoration: const InputDecoration(
-                                                        labelText: "Enter start value",
-                                                      ),
-                                                    ),
-                                                    TextField(
-                                                      controller: falseController,
-                                                      decoration: const InputDecoration(
-                                                        labelText: "Enter end value",
-                                                      ),
-                                                    ),
-                                                    Row(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      children: [
-                                                        TextButton(
-                                                          onPressed: () {
-                                                            List<AttributeModel> tempList =
-                                                                List.from(myType.attributeData);
-                                                            tempList.add(AttributeModel(
-                                                              attributeType: AttributeType.range,
-                                                              value: "${trueController.text} - ${falseController.text}",
-                                                              name: nameController.text,
-                                                              entityId: myType.selectedEntityId,
-                                                              libraryId: myType.selectedLibraryId,
-                                                              systemId: myType.selectedSystemId,
-                                                            ));
-                                                            myType.attributeData = tempList;
-                                                            myType.setState(CurrenState.idle);
-                                                            Navigator.pop(context);
-                                                            Navigator.pop(context);
-                                                          },
-                                                          child: const Text("Add"),
-                                                        ),
-                                                        TextButton(
-                                                          onPressed: () {
-                                                            Navigator.pop(context);
-                                                          },
-                                                          child: const Text("Cancel"),
-                                                        ),
-                                                      ],
-                                                    )
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                                ListTile(
-                                  title: const Text("Bool"),
-                                  onTap: () {
-                                    //show dialog to add a bool
-                                    TextEditingController nameController = TextEditingController();
-                                    TextEditingController trueController = TextEditingController();
-                                    TextEditingController falseController = TextEditingController();
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: const Text("Add Bool"),
-                                          content: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SizedBox(
-                                                width: 400,
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                  children: [
-                                                    TextField(
-                                                      controller: nameController,
-                                                      decoration: const InputDecoration(
-                                                        labelText: "Enter attribute name",
-                                                      ),
-                                                    ),
-                                                    TextField(
-                                                      controller: trueController,
-                                                      decoration: const InputDecoration(
-                                                        labelText: "Enter true value",
-                                                      ),
-                                                    ),
-                                                    TextField(
-                                                      controller: falseController,
-                                                      decoration: const InputDecoration(
-                                                        labelText: "Enter false value",
-                                                      ),
-                                                    ),
-                                                    Row(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      children: [
-                                                        TextButton(
-                                                          onPressed: () {
-                                                            List<AttributeModel> tempList =
-                                                                List.from(myType.attributeData);
-                                                            tempList.add(AttributeModel(
-                                                              attributeType: AttributeType.bool,
-                                                              value: "${trueController.text} - ${falseController.text}",
-                                                              name: nameController.text,
-                                                              entityId: myType.selectedEntityId,
-                                                              libraryId: myType.selectedLibraryId,
-                                                              systemId: myType.selectedSystemId,
-                                                            ));
-                                                            myType.attributeData = tempList;
-                                                            myType.setState(CurrenState.idle);
-                                                            Navigator.pop(context);
-                                                            Navigator.pop(context);
-                                                          },
-                                                          child: const Text("Add"),
-                                                        ),
-                                                        TextButton(
-                                                          onPressed: () {
-                                                            Navigator.pop(context);
-                                                          },
-                                                          child: const Text("Cancel"),
-                                                        ),
-                                                      ],
-                                                    )
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                                ListTile(
-                                  title: const Text("Collection"),
-                                  onTap: () {
-                                    //show dialog to add collections
-                                    List<String> collectionList = [];
-                                    TextEditingController dataController = TextEditingController();
-                                    TextEditingController nameController = TextEditingController();
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (context) {
-                                        return StatefulBuilder(
-                                          builder: (BuildContext context, setState) {
-                                            return AlertDialog(
-                                              title: const Text("Add Collection"),
-                                              content: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  TextField(
-                                                    controller: nameController,
-                                                    decoration: const InputDecoration(
-                                                      labelText: "Enter Collection name",
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                    height: 300,
-                                                    child: SingleChildScrollView(
-                                                      child: Column(
-                                                        children: <Widget>[
-                                                          ...collectionList.map(
-                                                            (e) {
-                                                              return ListTile(
-                                                                title: Text(e),
-                                                                trailing: IconButton(
-                                                                  onPressed: () {
-                                                                    collectionList.remove(e);
-                                                                    setState(() {});
-                                                                  },
-                                                                  icon: const Icon(Icons.close),
-                                                                ),
-                                                              );
-                                                            },
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  TextField(
-                                                    controller: dataController,
-                                                    decoration: InputDecoration(
-                                                      labelText: "Enter Collection data",
-                                                      suffix: IconButton(
-                                                        onPressed: () {
-                                                          collectionList.add(dataController.text);
-                                                          dataController.clear();
-                                                          setState(() {});
-                                                        },
-                                                        icon: const Icon(Icons.add),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                    children: [
-                                                      TextButton(
-                                                        onPressed: () {
-                                                          if (dataController.text.isNotEmpty) {
-                                                            collectionList.add(dataController.text);
-                                                            dataController.clear();
-                                                          }
-                                                          List<AttributeModel> tempList =
-                                                              List.from(myType.attributeData);
-                                                          tempList.add(AttributeModel(
-                                                            attributeType: AttributeType.collection,
-                                                            value: collectionList,
-                                                            name: nameController.text,
-                                                            entityId: myType.selectedEntityId,
-                                                            libraryId: myType.selectedLibraryId,
-                                                            systemId: myType.selectedSystemId,
-                                                          ));
-                                                          myType.attributeData = tempList;
-                                                          myType.setState(CurrenState.idle);
-                                                          Navigator.pop(context);
-                                                          Navigator.pop(context);
-                                                        },
-                                                        child: const Text("Add"),
-                                                      ),
-                                                      TextButton(
-                                                        onPressed: () {
-                                                          Navigator.pop(context);
-                                                        },
-                                                        child: const Text("Cancel"),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
+                      _showNameDialog(context, dataProvider, entityIndex);
                     },
                     child: const Text(
                       "Add",
@@ -653,252 +275,457 @@ class AttributeContainer extends StatelessWidget {
     );
   }
 
-  IconButton editButton(DataProvider myType, int index, BuildContext context) {
-    return IconButton(
-      onPressed: () {
-        if ([AttributeType.int, AttributeType.string].contains(myType.attributeData[index].attributeType)) {
-          TextEditingController attributeController = TextEditingController();
-          TextEditingController nameController = TextEditingController();
-          attributeController.text = myType.attributeData[index].value.toString();
-          nameController.text = myType.attributeData[index].name;
+  // Function to handle editing an attribute
+  void _handleEditAttribute(
+    BuildContext context,
+    DataProvider dataProvider,
+    int entityIndex,
+    int attributeIndex,
+  ) {
+    var attribute = dataProvider.attributeData[attributeIndex];
+    TextEditingController attributeController = TextEditingController(text: attribute.value.toString());
+    TextEditingController nameController = TextEditingController(text: attribute.name);
 
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) {
-              return AlertDialog(
-                title: Text("Edit ${myType.attributeData[index].attributeType}"),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: "Enter attribute name",
-                      ),
-                    ),
-                    TextField(
-                      controller: attributeController,
-                      decoration: const InputDecoration(
-                        labelText: "Enter attribute value",
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            List<AttributeModel> tempList = List.from(myType.attributeData);
-                            tempList[index] = AttributeModel(
-                              attributeType: myType.attributeData[index].attributeType,
-                              value: myType.attributeData[index].attributeType != AttributeType.int
-                                  ? attributeController.text
-                                  : int.parse(attributeController.text),
-                              name: nameController.text,
-                              entityId: myType.selectedEntityId,
-                              libraryId: myType.selectedLibraryId,
-                              systemId: myType.selectedSystemId,
-                            );
-                            myType.attributeData = tempList;
-                            myType.setState(CurrenState.idle);
-                            Navigator.pop(context);
-                          },
-                          child: const Text("Edit"),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text("Cancel"),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        } else if (myType.attributeData[index].attributeType == AttributeType.collection) {
-          List<String> collectionList = List.from(myType.attributeData[index].value as List<String>);
-          TextEditingController dataController = TextEditingController();
-          TextEditingController nameController = TextEditingController();
-          nameController.text = myType.attributeData[index].name;
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) {
-              return StatefulBuilder(
-                builder: (BuildContext context, setState) {
-                  return AlertDialog(
-                    title: const Text("Add Collection"),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextField(
-                          controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: "Enter Collection name",
-                          ),
-                        ),
-                        SizedBox(
-                          height: 300,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: <Widget>[
-                                ...collectionList.map(
-                                  (e) {
-                                    return ListTile(
-                                      title: Text(e),
-                                      trailing: IconButton(
-                                        onPressed: () {
-                                          collectionList.remove(e);
-                                          setState(() {});
-                                        },
-                                        icon: const Icon(Icons.close),
-                                      ),
-                                    );
+    // Open a dialog to edit the attribute based on its type
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return _buildEditDialog(
+          context,
+          dataProvider,
+          entityIndex,
+          attributeIndex,
+          nameController,
+          attributeController,
+        );
+      },
+    );
+  }
+
+  // Function to handle deleting an attribute
+  void _handleDeleteAttribute(DataProvider dataProvider, int entityIndex, int attributeIndex) {
+    List<AttributeModel> updatedAttributes = List.from(dataProvider.attributeData);
+    updatedAttributes.removeAt(attributeIndex);
+
+    // Update the entity with the modified list of attributes
+    // dataProvider.entityData[entityIndex] = dataProvider.entityData[entityIndex].copyWith();
+
+    // Trigger a state update
+    dataProvider.setState(CurrenState.idle);
+  }
+
+  // New function to show a dialog asking for the 'name' first
+  void _showNameDialog(BuildContext context, DataProvider dataProvider, int entityIndex) {
+    TextEditingController nameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Enter attribute name"),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(labelText: "Attribute Name"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the name dialog
+                _showTypeSelectionDialog(context, dataProvider, entityIndex, nameController.text);
+              },
+              child: const Text("Next"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to show a dialog for selecting the 'type'
+  void _showTypeSelectionDialog(
+    BuildContext context,
+    DataProvider dataProvider,
+    int entityIndex,
+    String attributeName,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Select attribute type"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text("String"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showValueDialog(context, dataProvider, entityIndex, attributeName, AttributeType.string);
+                },
+              ),
+              ListTile(
+                title: const Text("Int"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showValueDialog(context, dataProvider, entityIndex, attributeName, AttributeType.int);
+                },
+              ),
+              ListTile(
+                title: const Text("Range"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showRangeValueDialog(context, dataProvider, entityIndex, attributeName);
+                },
+              ),
+              ListTile(
+                title: const Text("Bool"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showBoolValueDialog(context, dataProvider, entityIndex, attributeName);
+                },
+              ),
+              ListTile(
+                title: const Text("Collection"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showCollectionValueDialog(context, dataProvider, entityIndex, attributeName);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Function to show a dialog asking for the 'value' based on the type
+  void _showValueDialog(
+    BuildContext context,
+    DataProvider dataProvider,
+    int entityIndex,
+    String attributeName,
+    AttributeType attributeType,
+  ) {
+    TextEditingController valueController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Enter value for $attributeName"),
+          content: TextField(
+            controller: valueController,
+            decoration: const InputDecoration(labelText: "Value"),
+            keyboardType: attributeType == AttributeType.int ? TextInputType.number : TextInputType.text,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                List<AttributeModel> updatedAttributes = List.from(dataProvider.attributeData);
+                updatedAttributes.add(AttributeModel(
+                  attributeType: attributeType,
+                  value: attributeType == AttributeType.int ? int.parse(valueController.text) : valueController.text,
+                  name: attributeName,
+                  entityId: dataProvider.selectedEntityId,
+                  libraryId: dataProvider.selectedLibraryId,
+                  systemId: dataProvider.selectedSystemId,
+                ));
+                dataProvider.attributeData = updatedAttributes;
+                dataProvider.setState(CurrenState.idle);
+                Navigator.pop(context);
+              },
+              child: const Text("Add"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to show a dialog for 'Range' values
+  void _showRangeValueDialog(
+    BuildContext context,
+    DataProvider dataProvider,
+    int entityIndex,
+    String attributeName,
+  ) {
+    TextEditingController startController = TextEditingController();
+    TextEditingController endController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Enter range values for $attributeName"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: startController,
+                decoration: const InputDecoration(labelText: "Start Value"),
+              ),
+              TextField(
+                controller: endController,
+                decoration: const InputDecoration(labelText: "End Value"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                List<AttributeModel> updatedAttributes = List.from(dataProvider.attributeData);
+                updatedAttributes.add(AttributeModel(
+                  attributeType: AttributeType.range,
+                  value: "${startController.text} - ${endController.text}",
+                  name: attributeName,
+                  entityId: dataProvider.selectedEntityId,
+                  libraryId: dataProvider.selectedLibraryId,
+                  systemId: dataProvider.selectedSystemId,
+                ));
+                dataProvider.attributeData = updatedAttributes;
+                dataProvider.setState(CurrenState.idle);
+                Navigator.pop(context);
+              },
+              child: const Text("Add"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to show a dialog for 'Bool' values
+  void _showBoolValueDialog(
+    BuildContext context,
+    DataProvider dataProvider,
+    int entityIndex,
+    String attributeName,
+  ) {
+    TextEditingController trueController = TextEditingController();
+    TextEditingController falseController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Enter boolean values for $attributeName"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: trueController,
+                decoration: const InputDecoration(labelText: "True Value"),
+              ),
+              TextField(
+                controller: falseController,
+                decoration: const InputDecoration(labelText: "False Value"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                List<AttributeModel> updatedAttributes = List.from(dataProvider.attributeData);
+                updatedAttributes.add(AttributeModel(
+                  attributeType: AttributeType.bool,
+                  value: "${trueController.text} - ${falseController.text}",
+                  name: attributeName,
+                  entityId: dataProvider.selectedEntityId,
+                  libraryId: dataProvider.selectedLibraryId,
+                  systemId: dataProvider.selectedSystemId,
+                ));
+                dataProvider.attributeData = updatedAttributes;
+                dataProvider.setState(CurrenState.idle);
+                Navigator.pop(context);
+              },
+              child: const Text("Add"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to show a dialog for 'Collection' values
+  void _showCollectionValueDialog(
+    BuildContext context,
+    DataProvider dataProvider,
+    int entityIndex,
+    String attributeName,
+  ) {
+    List<String> collectionList = [];
+    TextEditingController dataController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, setState) {
+            return AlertDialog(
+              title: Text("Enter collection values for $attributeName"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 200,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: collectionList
+                            .map(
+                              (e) => ListTile(
+                                title: Text(e),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () {
+                                    setState(() {
+                                      collectionList.remove(e);
+                                    });
                                   },
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        TextField(
-                          controller: dataController,
-                          decoration: InputDecoration(
-                            labelText: "Enter Collection data",
-                            suffix: IconButton(
-                              onPressed: () {
-                                collectionList.add(dataController.text);
-                                dataController.clear();
-                                setState(() {});
-                              },
-                              icon: const Icon(Icons.add),
-                            ),
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            TextButton(
-                              onPressed: () {
-                                if (dataController.text.isNotEmpty) {
-                                  collectionList.add(dataController.text);
-                                  dataController.clear();
-                                }
-                                List<AttributeModel> tempList = List.from(myType.attributeData);
-                                //replace the attribute with new one
-                                tempList[index] = AttributeModel(
-                                  attributeType: AttributeType.collection,
-                                  value: collectionList,
-                                  name: nameController.text,
-                                  entityId: myType.selectedEntityId,
-                                  libraryId: myType.selectedLibraryId,
-                                  systemId: myType.selectedSystemId,
-                                );
-                                myType.attributeData = tempList;
-                                myType.setState(CurrenState.idle);
-                                Navigator.pop(context);
-                              },
-                              child: const Text("Add"),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text("Cancel"),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        } else {
-          TextEditingController nameController = TextEditingController();
-          TextEditingController trueController = TextEditingController();
-          TextEditingController falseController = TextEditingController();
-          List<String> value = myType.attributeData[index].value.split(" - ");
-          nameController.text = myType.attributeData[index].name;
-          trueController.text = value[0];
-          falseController.text = value[1];
-
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) {
-              return AlertDialog(
-                title: Text("Edit ${myType.attributeData[index].attributeType}"),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: "Enter attribute name",
+                              ),
+                            )
+                            .toList(),
                       ),
                     ),
-                    TextField(
-                      controller: trueController,
-                      decoration: const InputDecoration(
-                        labelText: "Enter start value",
+                  ),
+                  TextField(
+                    controller: dataController,
+                    decoration: InputDecoration(
+                      labelText: "Add item",
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () {
+                          setState(() {
+                            collectionList.add(dataController.text);
+                            dataController.clear();
+                          });
+                        },
                       ),
                     ),
-                    TextField(
-                      controller: falseController,
-                      decoration: const InputDecoration(
-                        labelText: "Enter end value",
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            List<AttributeModel> tempList = List.from(myType.attributeData);
-                            tempList[index] = AttributeModel(
-                              attributeType: AttributeType.range,
-                              value: "${trueController.text} - ${falseController.text}",
-                              name: nameController.text,
-                              entityId: myType.selectedEntityId,
-                              libraryId: myType.selectedLibraryId,
-                              systemId: myType.selectedSystemId,
-                            );
-                            myType.attributeData = tempList;
-                            myType.setState(CurrenState.idle);
-                            Navigator.pop(context);
-                          },
-                          child: const Text("Edit"),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text("Cancel"),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    List<AttributeModel> updatedAttributes = List.from(dataProvider.attributeData);
+                    updatedAttributes.add(AttributeModel(
+                      attributeType: AttributeType.collection,
+                      value: collectionList,
+                      name: attributeName,
+                      entityId: dataProvider.selectedEntityId,
+                      libraryId: dataProvider.selectedLibraryId,
+                      systemId: dataProvider.selectedSystemId,
+                    ));
+                    dataProvider.attributeData = updatedAttributes;
+                    dataProvider.setState(CurrenState.idle);
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Add"),
                 ),
-              );
-            },
-          );
-        }
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Cancel"),
+                ),
+              ],
+            );
+          },
+        );
       },
-      icon: const Icon(
-        Icons.edit,
-        color: Colors.green,
+    );
+  }
+
+  // General function to build edit dialog
+  Widget _buildEditDialog(
+    BuildContext context,
+    DataProvider dataProvider,
+    int entityIndex,
+    int attributeIndex,
+    TextEditingController nameController,
+    TextEditingController attributeController,
+  ) {
+    return AlertDialog(
+      title: Text("Edit ${dataProvider.attributeData[attributeIndex].attributeType}"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: nameController,
+            decoration: const InputDecoration(labelText: "Enter attribute name"),
+          ),
+          TextField(
+            controller: attributeController,
+            decoration: const InputDecoration(labelText: "Enter attribute value"),
+          ),
+        ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            List<AttributeModel> updatedAttributes = List.from(dataProvider.attributeData);
+            updatedAttributes[attributeIndex] = AttributeModel(
+              attributeType: dataProvider.attributeData[attributeIndex].attributeType,
+              value: attributeController.text,
+              name: nameController.text,
+              entityId: dataProvider.selectedEntityId,
+              libraryId: dataProvider.selectedLibraryId,
+              systemId: dataProvider.selectedSystemId,
+            );
+            dataProvider.attributeData = updatedAttributes;
+            dataProvider.setState(CurrenState.idle);
+            Navigator.pop(context);
+          },
+          child: const Text("Edit"),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text("Cancel"),
+        ),
+      ],
     );
   }
 
   bool shouldShowSuperEntity(int index, DataProvider myType) {
     //if only library is selected and no system and entity is selected then show all super entities
     if (myType.selectedLibraryId == -1) {
-      return true;
+      return false;
+    } else if (myType.selectedLibraryId != -1 && myType.selectedSystemId == -1 && myType.selectedEntityId == -1) {
+      return myType.superEntityData[index].libraryId == myType.selectedLibraryId;
     } else if (myType.selectedLibraryId != -1 && myType.selectedSystemId == -1 && myType.selectedEntityId == -1) {
       return myType.superEntityData[index].libraryId == myType.selectedLibraryId;
     } else if (myType.selectedLibraryId != -1 && myType.selectedSystemId != -1 && myType.selectedEntityId == -1) {
@@ -908,6 +735,26 @@ class AttributeContainer extends StatelessWidget {
       return myType.superEntityData[index].libraryId == myType.selectedLibraryId &&
           myType.superEntityData[index].systemId == myType.selectedSystemId &&
           myType.superEntityData[index].entityId == myType.selectedEntityId;
+    } else {
+      return false;
+    }
+  }
+
+  bool shouldShowAttribute(int index, DataProvider myType) {
+    //if only library is selected and no system and entity is selected then show all super entities
+    if (myType.selectedLibraryId == -1) {
+      return false;
+    } else if (myType.selectedLibraryId != -1 && myType.selectedSystemId == -1 && myType.selectedEntityId == -1) {
+      return myType.attributeData[index].libraryId == myType.selectedLibraryId;
+    } else if (myType.selectedLibraryId != -1 && myType.selectedSystemId == -1 && myType.selectedEntityId == -1) {
+      return myType.attributeData[index].libraryId == myType.selectedLibraryId;
+    } else if (myType.selectedLibraryId != -1 && myType.selectedSystemId != -1 && myType.selectedEntityId == -1) {
+      return myType.attributeData[index].libraryId == myType.selectedLibraryId &&
+          myType.attributeData[index].systemId == myType.selectedSystemId;
+    } else if (myType.selectedLibraryId != -1 && myType.selectedSystemId != -1 && myType.selectedEntityId != -1) {
+      return myType.attributeData[index].libraryId == myType.selectedLibraryId &&
+          myType.attributeData[index].systemId == myType.selectedSystemId &&
+          myType.attributeData[index].entityId == myType.selectedEntityId;
     } else {
       return false;
     }
