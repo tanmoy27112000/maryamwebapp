@@ -77,6 +77,7 @@ class EntityContainer extends StatelessWidget {
                                           myType.setLibraryId(myType.entityData[index].libraryId);
                                           myType.setSystemId(myType.entityData[index].systemId);
                                           myType.setEntityId(myType.entityData[index].id);
+                                          myType.setSuperEntityId(-1);
                                           myType.setSuperEntityData(index);
                                         },
                                         trailing: Row(

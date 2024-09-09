@@ -155,6 +155,11 @@ class DataProvider extends ChangeNotifier {
     superEntityData = List.from(tempSuperEntityData);
     notifyListeners();
   }
+
+  void updateSuperEntity(SuperEntityModel superEntityModel, int index) {
+    superEntityData[index] = superEntityModel;
+    notifyListeners();
+  }
 }
 
 enum CurrenState {

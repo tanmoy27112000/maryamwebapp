@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp/provider/data_provider.dart';
-import 'package:webapp/widget/attribute_container.dart';
+import 'package:webapp/widget/attribute_container%20copy.dart';
 import 'package:webapp/widget/entity_container.dart';
 import 'package:webapp/widget/library_comment_container.dart';
 import 'package:webapp/widget/library_container.dart';
@@ -181,7 +181,7 @@ class _HomepageState extends State<Homepage> {
                   EntityContainer(),
                 ],
               ),
-              AttributeContainer(),
+              AttributeContainerV2(),
             ],
           ),
         ],
